@@ -21,8 +21,12 @@ typedef struct dataset_t {
    int  features[ FEATURES ];
    int  class;
    int  label;
-   int  neighbor;
 } dataset_t;
+
+typedef struct neighbors_t {
+   int neighbor_count;
+   int neighbor[ OBSERVATIONS ];
+} neighbors_t;
 
 #define EPSILON        1.0
 #define MINPTS         3
@@ -156,16 +160,6 @@ dataset_t dataset[ OBSERVATIONS ] =
 };
 
 
-void clear_neighbors( void )
-{
-   for ( int i = 0 ; i < OBSERVATIONS ; i++ )
-   {
-      dataset[ i ].neighbor = 0;
-   }
-
-   return;
-}
-
 void clear_labels( void )
 {
    for ( int i = 0 ; i < OBSERVATIONS ; i++ )
@@ -191,15 +185,20 @@ double distance( int i, int j )
 }
 
 
-void find_neighbors( int observation )
+neighbor_t *find_neighbors( int observation )
 {
+   neighbors_t *neighbor = ( neighbors_t )malloc( sizeof( neighbors_t ) );
+
+   bzero( (void *)neighbor_t, sizeof( neighbor_t ) );
+
    for ( int i = 0 ; i < OBSERVATIONS ; i++ )
    {
       if ( i = observation ) continue;
 
       if ( distance( observation, i ) < EPSILON )
       {
-         dataset[ i ].neighbor = 1;
+         neighbor->neighbor[ i ] = 1;
+         neighbor->neighbor_count++;
       }
    }
 
@@ -207,8 +206,54 @@ void find_neighbors( int observation )
 }
 
 
-void process_neighbors( int observation )
+void free_neighbors( neighbors_t *neighbors )
 {
+   free( neighbors );
+
+   return;
+}
+
+
+void process_neighbors( int initial_point, neighbors_t *seed_set )
+{
+//      for each point Q in S {                         /* Process every seed point */
+//         if label(Q) = Noise then label(Q) = C        /* Change Noise to border point */
+//         if label(Q) ≠ undefined then continue        /* Previously processed */
+//         label(Q) = C                                 /* Label neighbor */
+//         Neighbors N = RangeQuery(DB, dist, Q, eps)   /* Find neighbors */
+//         if |N| ≥ minPts then {                       /* Density check */
+//            S = S ∪ N                                 /* Add new neighbors to seed set */
+//         }
+
+
+   // Process every member in the seed set.
+   for ( int i = 0 ; i < OBSERVATIONS ; i++ )
+   {
+      // Is this a neighbor?
+      if ( seed_set->neighbor[ i ] )
+      {
+         if ( dataset[ i ].label == NOISE )
+         {
+            dataset[ i ].label = dataset[ initial_point ].label;
+         }
+         else if ( dataset[ i ].label == UNDEFINED )
+         {
+            continue;
+         }
+         else
+         {
+            dataset[ i ].label = dataset[ initial_point ].label;
+         }
+
+         neighbors_t *neighbors = find_neighbors( i );
+         if ( neighbors->neighbor_count >= MINPTS )
+         {
+            fold neighbors into seed_set, reset i to 0 to restart the loop.
+         }
+         free_neighbors( neighbors );
+      }
+   }
+
 
 
 }
@@ -222,17 +267,19 @@ void dbscan( void )
    {
       if ( dataset[ i ].label != UNDEFINED ) continue;
 
-      int neighbor_count = find_neighbors( i );
+      neighbors_t *neighbors = find_neighbors( i );
 
-      if ( neighbor_count < MINPTS )
+      if ( neighbors->neighbor_count < MINPTS )
       {
          dataset[ i ] = NOISE;
+         free_neighbors( neighbors );
          continue;
       }
 
       cluster++;
+      dataset[ i ].label = cluster;
 
-      process_neighbors( );
+      process_neighbors( i, neighbors  );
    }
 
    return;
