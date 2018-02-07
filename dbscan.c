@@ -213,19 +213,21 @@ void free_neighbors( neighbors_t *neighbors )
    return;
 }
 
+void fold_neighbors( neighbors_t *seed_set, neighbors_t *neighbors )
+{
+   for ( int i = 0 ; i < OBSERVATIONS ; i++ )
+   {
+      if ( neighbors->neighbor[ i ] )
+      {
+         seed_set->neighbor[ i ] = 1;
+      }
+   }
+
+   return;
+}
 
 void process_neighbors( int initial_point, neighbors_t *seed_set )
 {
-//      for each point Q in S {                         /* Process every seed point */
-//         if label(Q) = Noise then label(Q) = C        /* Change Noise to border point */
-//         if label(Q) ≠ undefined then continue        /* Previously processed */
-//         label(Q) = C                                 /* Label neighbor */
-//         Neighbors N = RangeQuery(DB, dist, Q, eps)   /* Find neighbors */
-//         if |N| ≥ minPts then {                       /* Density check */
-//            S = S ∪ N                                 /* Add new neighbors to seed set */
-//         }
-
-
    // Process every member in the seed set.
    for ( int i = 0 ; i < OBSERVATIONS ; i++ )
    {
@@ -248,14 +250,14 @@ void process_neighbors( int initial_point, neighbors_t *seed_set )
          neighbors_t *neighbors = find_neighbors( i );
          if ( neighbors->neighbor_count >= MINPTS )
          {
-            fold neighbors into seed_set, reset i to 0 to restart the loop.
+            fold_neighbors( seed_set, neighbors );
+            i = 0;
          }
          free_neighbors( neighbors );
       }
    }
 
-
-
+   return;
 }
 
 
@@ -280,6 +282,7 @@ void dbscan( void )
       dataset[ i ].label = cluster;
 
       process_neighbors( i, neighbors  );
+      free_neighbors( neighbors );
    }
 
    return;
