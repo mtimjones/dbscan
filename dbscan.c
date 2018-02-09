@@ -3,7 +3,7 @@
 #include <strings.h>
 #include <math.h>
 
-#define OBSERVATIONS	100
+#define OBSERVATIONS	103
 #define FEATURES	16
 
 #define UNDEFINED        0
@@ -33,8 +33,8 @@ typedef struct neighbors_t {
 //#define EPSILON        1.5
 //#define MINPTS         5
 
-#define EPSILON        1.75
-#define MINPTS         6
+#define EPSILON        1.70
+#define MINPTS         4
 
 // Features are:
 //    [ 0] hair
@@ -160,6 +160,14 @@ dataset_t dataset[ OBSERVATIONS ] =
    {"wolf",     {1,0,0,1,0,0,1,1,1,1,0,0,4,1,0,1}, 1, 0},
    {"worm",     {0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0}, 7, 0},
    {"wren",     {0,1,1,0,1,0,0,0,1,1,0,0,2,1,0,0}, 2, 0},
+
+   {"flea with teeth", 
+                {0,0,1,0,0,0,0,1,0,1,0,0,6,0,0,0}, 0, 0},
+   {"predator with hair", 
+                {0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0}, 0, 0},
+   {"six legged aquatic egg layer", 
+                {0,0,1,0,0,1,0,0,0,0,0,0,6,0,0,0}, 0, 0},
+
 };
 
 
@@ -266,7 +274,6 @@ int dbscan( void )
 
       if ( neighbors->neighbor_count < MINPTS )
       {
-printf("Observation %d is NOISE.\n", i );
          dataset[ i ].label = NOISE;
          free_neighbors( neighbors );
          continue;
@@ -274,7 +281,6 @@ printf("Observation %d is NOISE.\n", i );
 
       // Create a new cluster.
       dataset[ i ].label = ++cluster;
-printf("Created cluster %d for observation %d\n", cluster, i );
 
       process_neighbors( i, neighbors  );
 
